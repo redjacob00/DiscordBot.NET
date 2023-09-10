@@ -2,22 +2,54 @@
 using Discord.Net;
 using Discord.WebSocket;
 using Newtonsoft.Json;
-
+using DiscordBot;
+/*
+ * TODO
+ * 1. make Command abstract class
+ * 2. make CommandsUpdater.UpdateGuildCommands update specific
+ */
 class Program
 {
-	private DiscordSocketClient _client;
+	private DiscordSocketClient _client = new();
+	private readonly SlashCommand[] slashCommands = new SlashCommand[]
+	{
+		new PingSlashCommand(),
+	};
+	private readonly SlashCommand[] globalSlashCommands = new SlashCommand[]
+	{
 
-	public static Task Main(string[] args) => new Program().MainAsync();
-	public async Task MainAsync()
+	};
+	private readonly Dictionary<ulong, SlashCommand[]> guildsCommands = new()
+	{
+		// ulong: the id of the guild, SlashCommand[]: the commands you wish to be available for only that guild
+	};
+
+	public static Task Main(string[] args) => new Program().MainAsync(args);
+	public async Task MainAsync(string[] args)
 	{
 		_client = new DiscordSocketClient();
 		_client.Log += Log;
-		string token = "Mzc4NjM3NzgwMTA2MDg0MzYz.GGO2qE.fn01UiKvet-SGyQ1LkU5M_YSyceOvTOMmAvd2c";
+		string token = "your token";
 		await _client.LoginAsync(TokenType.Bot, token);
 		await _client.StartAsync();
-		//Task.Delay(2000).Wait();
-		//await SetUpSlashCommands();
 		_client.SlashCommandExecuted += SlashCommandHandler;
+		if (args.Length > 0)
+		{
+			Task.Delay(5000).Wait(); // Wait until socket is fully loaded
+			if (args[0] == "updguild")
+			{
+				foreach (var kvp in guildsCommands) { 
+					await CommandsUpdater.UpdateGuildCommands(_client, kvp.Key, kvp.Value);
+				}
+				Console.WriteLine("Guild Commands Updated!");
+			} else if (args[0] == "updglobal") {
+				foreach (var kvp in guildsCommands)
+				{
+					await CommandsUpdater.UpdateGuildCommands(_client, kvp.Key, kvp.Value);
+				}
+				Console.WriteLine("Global Commands Updated!");
+			}
+		}
 		await Task.Delay(-1);
 	}
 
@@ -27,31 +59,17 @@ class Program
 		return Task.CompletedTask;
 	}
 
-	private async Task SetUpSlashCommands()
+	private Task SlashCommandHandler(SocketSlashCommand command)
 	{
-		var guild = _client.GetGuild(857093410371665930);
-		SlashCommandBuilder guildCommand = new();
-		guildCommand.WithName("ping");
-		guildCommand.WithDescription("pong!");
-
-		try
+		foreach (SlashCommand slashCommand in slashCommands)
 		{
-			// updates/adds a new slash command to a guild
-			await guild.CreateApplicationCommandAsync(guildCommand.Build());
-			// updates/adds a new slash command globally
-			//await _client.CreateGlobalApplicationCommandAsync(guildCommand.Build());
-		} catch (HttpException e)
-		{
-			string json = JsonConvert.SerializeObject(e.Errors, Formatting.Indented);
-			Console.WriteLine(json);
+			if (slashCommand.Name == command.CommandName)
+			{
+				slashCommand.Execute(command);
+				break;
+			}
 		}
-	}
 
-	private async Task SlashCommandHandler(SocketSlashCommand command)
-	{
-		if (command.Data.Name == "ping")
-		{
-			await command.RespondAsync("pong!");
-		}
+		return Task.CompletedTask;
 	}
 }
