@@ -15,21 +15,14 @@ class Program
 	{
 		new PingSlashCommand(),
 	};
-	private readonly SlashCommand[] globalSlashCommands = new SlashCommand[]
-	{
-
-	};
-	private readonly Dictionary<ulong, SlashCommand[]> guildsCommands = new()
-	{
-		// ulong: the id of the guild, SlashCommand[]: the commands you wish to be available for only that guild
-	};
+	
 
 	public static Task Main(string[] args) => new Program().MainAsync(args);
 	public async Task MainAsync(string[] args)
 	{
 		_client = new DiscordSocketClient();
 		_client.Log += Log;
-		string token = "your token";
+		string token = "Mzc4NjM3NzgwMTA2MDg0MzYz.GWdgaA.fRnHyAtcmuo0KppydsvU-VM_BqywXYjRYoozj4";
 		await _client.LoginAsync(TokenType.Bot, token);
 		await _client.StartAsync();
 		_client.SlashCommandExecuted += SlashCommandHandler;
@@ -38,16 +31,9 @@ class Program
 			Task.Delay(5000).Wait(); // Wait until socket is fully loaded
 			if (args[0] == "updguild")
 			{
-				foreach (var kvp in guildsCommands) { 
-					await CommandsUpdater.UpdateGuildCommands(_client, kvp.Key, kvp.Value);
-				}
-				Console.WriteLine("Guild Commands Updated!");
+				await CommandsUpdater.UpdateAllGuildCommands(_client);
 			} else if (args[0] == "updglobal") {
-				foreach (var kvp in guildsCommands)
-				{
-					await CommandsUpdater.UpdateGuildCommands(_client, kvp.Key, kvp.Value);
-				}
-				Console.WriteLine("Global Commands Updated!");
+				await CommandsUpdater.UpdateGlobalCommands(_client);
 			}
 		}
 		await Task.Delay(-1);
