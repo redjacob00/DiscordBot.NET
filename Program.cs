@@ -22,7 +22,7 @@ class Program
 	{
 		_client = new DiscordSocketClient();
 		_client.Log += Log;
-		string token = "Mzc4NjM3NzgwMTA2MDg0MzYz.GWdgaA.fRnHyAtcmuo0KppydsvU-VM_BqywXYjRYoozj4";
+		string token = "your token";
 		await _client.LoginAsync(TokenType.Bot, token);
 		await _client.StartAsync();
 		_client.SlashCommandExecuted += SlashCommandHandler;
